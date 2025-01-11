@@ -1,109 +1,102 @@
-// Step 1 - Display all the button text (required in display box)
 const displayBox = document.querySelector(".display-box");
 const calculatorBtns = document.querySelectorAll("button");
 
-// Audio file
-const prankAudio = new Audio("./aa.wav");
-
-// Variable to store display value
+// Variale to store display value
 let displayValue = "";
 let lastOperator = "";
+console.log("calculatorBtns", calculatorBtns);
 
-// Attach click event to each button
+// Onclick  event listeners
 calculatorBtns.forEach((btn) => {
   const buttonValue = btn.innerText;
+
   btn.onclick = () => {
     handleButtonAction(buttonValue);
   };
 });
 
-//onKeypress event listeners | to mak ecalc work with keyboard as well
+// onkeypress event listener | to make calc work with keyvboard as well
 document.addEventListener("keypress", (event) => {
   console.log("event", event.key);
 
-  if (event.code.includes("key")) {
+  if (event.code.includes("Key")) {
     return;
   }
+
   handleButtonAction(event.key);
 });
 
-// Function to update the display
-const display = (value) => {
-  displayBox.innerText = value || 0.0;
+// Function to display
+const display = () => {
+  displayBox.innerText = displayValue || "0.0";
 };
 
-// Function to handle button actions
 const handleButtonAction = (buttonValue) => {
-  displayBox.classList.remove("prank");
+  // Handle action for = button i.e calculate instead of displaying it
+  if (buttonValue === "=" || buttonValue === "Enter") {
+    const result = eval(displayValue);
+    displayValue = String(result);
 
-  // Handle "=" button for calculation
-  if (buttonValue === "=") {
-    try {
-      const result = eval(displayValue); // Evaluate the expression
-      displayValue = String(result);
-      lastOperator = ""; // Reset last operator
+    // update the last operator in the expression
+    lastOperator = "";
 
-      // Prank logic
-      const prankValue = generateRandomNumber();
-      if (prankValue) {
-        displayBox.classList.add("prank");
-        prankAudio.play();
-      }
+    display();
 
-      display(displayValue); // Display the result
-    } catch (e) {
-      display("Error");
-      displayValue = "";
-    }
     return;
   }
 
-  // Clear all when "AC" is clicked
+  // Handle action for AC [all clear] button
   if (buttonValue === "AC") {
     displayValue = "";
     display();
+
     return;
   }
 
-  // Remove last character when "C" is clicked
+  // Handle action for C [clear] button
   if (buttonValue === "C") {
+    // goal is to remove last character from displayValue string
     displayValue = displayValue.slice(0, -1);
-    display(displayValue);
+    display();
+
     return;
   }
 
-  // Prevent invalid operators at the beginning
-  if (["%", "*", "/"].includes(buttonValue) && !displayValue) {
-    return;
-  }
-
-  // Prevent consecutive operators (e.g., "+*" or "--")
-  if (["+", "-", "*", "/", "%"].includes(buttonValue)) {
-    const lastChar = displayValue.slice(-1);
-    lastOperator = buttonValue; // Update the last operator
-    if (["+", "-", "*", "/", "%"].includes(lastChar)) {
-      displayValue = displayValue.slice(0, -1); // Remove the last operator
+  // Making sure we have only valid expression for eval
+  // 1. Same operators are not allowed in the beginning of numbers
+  if (["%", "/", "*", "+"].includes(buttonValue)) {
+    if (!displayValue || displayValue === "-") {
+      return;
     }
   }
 
-  // Ensure proper decimal handling
-  if (buttonValue === ".") {
-    const lastOperatorIndex = displayValue.lastIndexOf(lastOperator);
-    const currentNumberSet = displayValue.slice(lastOperatorIndex + 1);
+  // 2. Don't allow 2 consecutive operators
+  if (["%", "/", "*", "+", "-"].includes(buttonValue)) {
+    const lastCharacter = displayValue.slice(-1);
 
-    // Prevent multiple decimals in the current number
+    // update the last operator in the expression
+    lastOperator = buttonValue;
+
+    if (["%", "/", "*", "+", "-"].includes(lastCharacter)) {
+      // removing last character from display value | expression
+      displayValue = displayValue.slice(0, -1);
+    }
+  }
+
+  // Making sure decimal expressions are correct
+  if (buttonValue === ".") {
+    // find the current number set, i.e number after the operator
+    const lastOperatorIndex = displayValue.lastIndexOf(lastOperator);
+    const currentNumberSet =
+      displayValue.slice(lastOperatorIndex) || displayValue;
+    console.log("currentNumberSet", currentNumberSet);
+
     if (currentNumberSet.includes(".")) {
       return;
     }
   }
 
-  // Update the display value and show it
-  displayValue += buttonValue;
-  display(displayValue);
-};
-
-// Function to generate random number for prank
-const generateRandomNumber = () => {
-  const randomNumber = Math.round(Math.random() * 10);
-  return randomNumber <= 3 ? randomNumber : 0;
+  // Displaying the operation
+  displayValue = displayValue + buttonValue;
+  display();
 };
